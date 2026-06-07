@@ -1,6 +1,8 @@
 {
   "name": "memory-os",
-  "owner": "tpop78",
+  "owner": {
+    "name": "tpop78"
+  },
   "plugins": [
     {
       "name": "memory-os",

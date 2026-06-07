@@ -2,5 +2,7 @@
   "name": "memory-os",
   "version": "0.1.0",
   "description": "Durable working memory for AI coding agents: bounded re-hydration across compaction and sessions.",
-  "author": "tpop78"
+  "author": {
+    "name": "tpop78"
+  }
 }

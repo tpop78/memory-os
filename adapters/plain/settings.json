@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "node <MEMORY_OS_DIR>/hooks/scripts/rehydrate.mjs", "timeout": 10 } ] }
+    ],
+    "PreCompact": [
+      { "hooks": [ { "type": "command", "command": "node <MEMORY_OS_DIR>/hooks/scripts/flush.mjs", "timeout": 10 } ] }
+    ]
+  }
+}

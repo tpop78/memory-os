@@ -1,0 +1,11 @@
+{
+  "name": "memory-os",
+  "owner": "tpop78",
+  "plugins": [
+    {
+      "name": "memory-os",
+      "source": "./",
+      "description": "Durable working memory: .memory contract + SessionStart/PreCompact hooks + checkpoint skill."
+    }
+  ]
+}

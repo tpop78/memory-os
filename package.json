@@ -1,0 +1,11 @@
+{
+  "name": "memory-os",
+  "version": "0.1.0",
+  "description": "Portable working-memory backbone for AI coding agents.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test hooks/scripts/"
+  },
+  "license": "MIT"
+}

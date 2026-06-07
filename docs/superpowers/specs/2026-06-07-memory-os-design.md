@@ -55,11 +55,13 @@ Together: re-hydrate cheaply on start → work and checkpoint continuously → f
 
 ## 6. Optional modules (off by default, YAGNI-gated)
 
-All three follow the product's "guide the user with recommended interactions" theme — **the agent proposes at the appropriate moment; the user confirms.** Nothing is silently always-on, and nothing is forced on a project that wants to stay simple.
+All of these follow one shared mechanism — a **situational-proposal layer**: the agent recognises a context and **proposes the relevant tool at the appropriate moment; the user confirms.** Nothing is silently always-on, and nothing is forced on a project that wants to stay simple. (CodeGraph is the one exception: for code work its detection is automatic, since it only makes the agent cheaper and carries no downside.)
 
 - **CodeGraph (Tier 3 — code intelligence).** For code projects, the agent **auto-detects `.codegraph/codegraph.db` and prefers `codegraph_*` MCP queries over file sweeps**; if absent, it **suggests installing CodeGraph**. First-class for code, zero-cost for non-code, never a hard dependency. CodeGraph is documented and detected — not bundled (it is its own binary / MCP server with its own lifecycle).
 - **Typed-edge knowledge layer (Tier 2 — domain knowledge).** When the agent detects knowledge accumulating (e.g. notes piling into `raw/`), it **proposes** standing up a `raw/ → wiki/ → outputs/` + `index.md` layer whose nodes carry frontmatter `type:` and typed edges (`relates-to`, `supersedes`, `sourced-from`, `contradicts`). The user confirms. Never auto-created. Optional read-only Obsidian viewer; Claude remains the librarian.
 - **Firecrawl ingestion (web → knowledge).** The agent **offers Firecrawl at the appropriate time** — e.g. when starting a new project from an idea, or when the user references a URL worth ingesting — to clip `URL → clean markdown → knowledge/raw/`. The user confirms. Gated behind a key; off by default.
+- **Understand-Anything (project comprehension / onboarding).** When the agent lands in an **existing or unfamiliar project**, it **proposes** running Understand-Anything to build an interactive knowledge graph — plain-English summaries, architectural layers, a dependency-ordered onboarding tour, and diff-impact views. This is **user-facing comprehension**, complementary to (not redundant with) CodeGraph's **agent-facing** token-efficient queries: CodeGraph makes *the agent* cheap to run on code; Understand-Anything helps *you* (or a new teammate) understand the project. Both are tree-sitter-based. External plugin — detected/proposed, not bundled.
+- **taste-skill (frontend design quality).** When a task involves **designing or redesigning a site or UI**, the agent **proposes** applying taste-skill's design guidance and asks for direction — its three dials (Design Variance, Motion Intensity, Visual Density) and a style direction (minimalist, brutalist, soft, …) — to avoid generic AI "slop." The user confirms/sets the dials. Proposed only on design/redesign tasks; external skill (`npx skills add`), not bundled.
 
 ## 7. Configuration knobs (ECC-inspired)
 
@@ -80,6 +82,8 @@ memory-os/
 │   └── scripts/         bounded rehydrate, flush
 ├── skills/
 │   ├── memory-checkpoint/      when/how to write STATE & JOURNAL
+│   ├── situational-suggestions/  proposal layer: detect context → suggest
+│   │                             CodeGraph / Understand-Anything / taste-skill / Firecrawl
 │   ├── firecrawl-clip/         (optional) URL → markdown → raw/
 │   └── knowledge-graph/        (optional) typed-edge wiki builder
 ├── commands/
@@ -117,4 +121,6 @@ The design is synthesised from four external reviews, with the spine (superpower
 - **"Self-improving knowledge base" video** — the `raw/wiki/outputs` + index pattern (Tier 2).
 - **"AI Operating System" video** — the **typed-edge knowledge graph** refinement (Tier 2).
 - **ECC** — **bounded re-hydration cap**, `/checkpoint`, and MCP-surface hygiene; validated the SessionStart/PreCompact mechanism at scale.
-- **CodeGraph (tpop78 fork)** — Tier 3 code intelligence via MCP.
+- **CodeGraph (tpop78 fork)** — Tier 3 code intelligence via MCP (agent-facing).
+- **Understand-Anything (Lum1104)** — user-facing project comprehension / onboarding graph (proposed on unfamiliar projects).
+- **taste-skill (Leonxlnx)** — frontend design-quality guidance (proposed on design/redesign tasks).

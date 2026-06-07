@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>memory-os — Manual</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#12151c; --panel2:#171b24; --line:#242a36;
+    --ink:#e7ebf2; --mut:#9aa6b8; --dim:#69748a;
+    --plan:#7c8aa0; --state:#f2b53b; --journal:#56c596; --hook:#7aa2ff; --accent:#ff6b6b;
+    --radius:14px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 700px at 72% -10%,#161b27 0%,var(--bg) 55%);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:54px 26px 100px}
+  header{margin-bottom:40px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:13px}
+  h1{font-size:42px;line-height:1.05;margin:0 0 14px;letter-spacing:-.02em;font-weight:730}
+  h1 .v{font-family:var(--mono);font-size:17px;color:var(--dim);font-weight:500;letter-spacing:0}
+  .lede{font-size:18px;color:var(--mut);max-width:760px}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .pill{font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);color:var(--mut);background:var(--panel)}
+  .thesis{margin:24px 0 0;padding:16px 20px;border-left:3px solid var(--state);background:var(--panel);border-radius:0 var(--radius) var(--radius) 0;font-size:15.5px}
+  .thesis b{color:var(--state)}
+  h2{font-size:13px;font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:60px 0 20px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  h2 .n{color:var(--accent);margin-right:10px}
+  p{font-size:15.5px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:14px}
+  code,.k{font-family:var(--mono);font-size:12.5px;background:#0e1118;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:#cdd6e6}
+  pre{background:#0e1118;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.65;color:#c2cbdb;margin:0 0 14px}
+  pre .c{color:var(--dim)}
+  pre .g{color:var(--journal)}
+  pre .y{color:var(--state)}
+  pre .b{color:var(--hook)}
+  .files{display:flex;flex-direction:column;gap:10px}
+  .file{display:grid;grid-template-columns:160px 1fr;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;position:relative;overflow:hidden}
+  .file:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+  .file .fn{font-family:var(--mono);font-size:13px;color:var(--c);font-weight:600}
+  .file .fd{color:var(--mut);font-size:14px}
+  .file .fd b{color:var(--ink)}
+  .loop{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .step .tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px;font-weight:700;background:color-mix(in srgb,var(--hook) 16%,transparent);color:var(--hook);border:1px solid var(--hook)}
+  .step .tag.s{background:color-mix(in srgb,var(--state) 16%,transparent);color:var(--state);border-color:var(--state)}
+  .step h3{margin:9px 0 6px;font-size:15px}
+  .step p{margin:0;color:var(--mut);font-size:13.5px}
+  .arrow{grid-column:1/-1;text-align:center;color:var(--dim);font-family:var(--mono);font-size:11px;letter-spacing:.1em;margin:3px 0}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;font-size:13.5px;margin-bottom:14px}
+  th,td{text-align:left;padding:12px 15px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  tr:last-child td{border-bottom:none}
+  ul{margin:6px 0 0;padding-left:20px;color:var(--mut);font-size:15px}
+  li{margin:6px 0}
+  li b,p b{color:var(--ink)}
+  .do{border-left:3px solid var(--journal)}
+  .dont{border-left:3px solid var(--accent)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .foot{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px;font-family:var(--mono)}
+  a{color:var(--hook)}
+  @media(max-width:740px){.loop,.two{grid-template-columns:1fr}.file{grid-template-columns:1fr;gap:6px}h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">User Manual</div>
+  <h1>memory-os <span class="v">v0.1.0</span></h1>
+  <p class="lede">Durable working memory for AI coding agents. Your agent remembers what it's doing, how far it's got, and what's left — across context compaction and brand-new sessions — without bloating the live context window.</p>
+  <div class="pill-row">
+    <span class="pill">Claude Code plugin</span>
+    <span class="pill">Node 18+ · zero deps</span>
+    <span class="pill">18 tests</span>
+    <span class="pill">MIT</span>
+    <span class="pill">github.com/tpop78/memory-os</span>
+  </div>
+  <div class="thesis"><b>The one idea:</b> the context window is a <b>cache</b>, not the source of truth. Everything durable lives in <code>.memory/</code> on disk. Compaction and "new session" stop being amnesia and become a cheap re-hydration from the smallest possible set of files.</div>
+</header>
+
+<h2><span class="n">01</span> What it gives you</h2>
+<div class="card">
+<ul>
+  <li><b>A <code>.memory/</code> contract</b> — three markdown files that hold your plan, live state, and history.</li>
+  <li><b>Two hooks</b> — <code>SessionStart</code> re-injects a <b>bounded</b> snapshot of where you are; <code>PreCompact</code> marks the journal and re-injects state so it survives summarization.</li>
+  <li><b>A skill + a command</b> — <code>memory-checkpoint</code> tells the agent when/how to write back; <code>/checkpoint</code> flushes on demand.</li>
+  <li><b>A situational-suggestions layer</b> — the agent proposes the right optional tool (CodeGraph, Understand-Anything, taste-skill, Firecrawl, a knowledge layer) at the right moment; you confirm.</li>
+</ul>
+</div>
+
+<h2><span class="n">02</span> Install</h2>
+<p><b>As a plugin (recommended):</b></p>
+<pre><span class="c"># add the marketplace and install</span>
+/plugin marketplace add tpop78/memory-os
+/plugin install memory-os@memory-os
+
+<span class="c"># then, in any project you want memory in, copy the starter files:</span>
+cp -r &lt;memory-os&gt;/templates/.memory ./.memory</pre>
+<p><b>Plain (no plugin):</b> copy the <code>hooks</code> block from <code>adapters/plain/settings.json</code> into your project's <code>.claude/settings.json</code> (replace <code>&lt;MEMORY_OS_DIR&gt;</code> with the absolute path to this repo), then copy <code>templates/.memory</code> into your project. <b>Codex:</b> see <code>adapters/codex/README.md</code> — the <code>.memory/</code> files are identical; only the hook wiring differs.</p>
+
+<h2><span class="n">03</span> The <code>.memory/</code> contract</h2>
+<div class="files">
+  <div class="file" style="--c:var(--plan)">
+    <div class="fn">PLAN.md</div>
+    <div class="fd"><b>Immutable per task.</b> The plan, with the <b>Definition of Done</b> at the very top. Written once (by <code>superpowers:writing-plans</code>) and not rewritten as work progresses.</div>
+  </div>
+  <div class="file" style="--c:var(--state)">
+    <div class="fn">STATE.md</div>
+    <div class="fd"><b>The live snapshot — overwritten, not appended.</b> Fixed sections: <code>Now</code> · <code>Definition of done</code> · <code>Done (n/total)</code> · <code>Remaining</code> · <code>Next action</code> · <code>Blockers / decisions</code>. This is the file that gets re-injected on every session start. Keep it short.</div>
+  </div>
+  <div class="file" style="--c:var(--journal)">
+    <div class="fn">JOURNAL.md</div>
+    <div class="fd"><b>Append-only.</b> One timestamped line per meaningful action. Never edit prior lines. Git history over <code>.memory/</code> is your time machine.</div>
+  </div>
+</div>
+
+<h2><span class="n">04</span> How memory survives — the loop</h2>
+<div class="loop">
+  <div class="step">
+    <span class="tag">SessionStart hook</span>
+    <h3>Re-hydrate (cheap)</h3>
+    <p>On startup / resume / clear / post-compaction, <code>rehydrate.mjs</code> injects STATE + plan pointer + recent journal lines — <b>capped at ~6k chars</b>. The agent wakes up knowing where it is without reading the codebase.</p>
+  </div>
+  <div class="step">
+    <span class="tag s">memory-checkpoint</span>
+    <h3>Work + checkpoint</h3>
+    <p>As each step completes, the agent overwrites STATE.md and appends one JOURNAL line. The disk stays ahead of the context window.</p>
+  </div>
+  <div class="arrow">▼ &nbsp; context fills · compaction fires &nbsp; ▼</div>
+  <div class="step">
+    <span class="tag">PreCompact hook</span>
+    <h3>Mark + re-inject</h3>
+    <p><code>flush.mjs</code> appends a <code>↻ compaction</code> line to the journal and re-injects STATE as additional context, so your state survives into the post-compaction window.</p>
+  </div>
+  <div class="step">
+    <span class="tag">→ loop closes</span>
+    <h3>Resume, no loss</h3>
+    <p>SessionStart fires again and the agent resumes from STATE.md's <code>Next action</code>. Same path covers closing your laptop and reopening tomorrow.</p>
+  </div>
+</div>
+
+<h2><span class="n">05</span> Commands &amp; skills</h2>
+<table>
+  <tr><th>Surface</th><th>What it does</th><th>When it fires</th></tr>
+  <tr><td><code>/checkpoint</code></td><td>Manually flush STATE.md + append a JOURNAL line + commit <code>.memory/</code>.</td><td>You run it.</td></tr>
+  <tr><td><code>memory-checkpoint</code> skill</td><td>Tells the agent <b>when &amp; how</b> to write STATE/JOURNAL during a task.</td><td>Auto, throughout multi-step work.</td></tr>
+  <tr><td><code>situational-suggestions</code> skill</td><td>Detects context, <b>proposes</b> the matching optional tool.</td><td>Auto, when starting work.</td></tr>
+</table>
+
+<h2><span class="n">06</span> Configuration</h2>
+<table>
+  <tr><th>Env var</th><th>Default</th><th>Effect</th></tr>
+  <tr><td><code>MEMORY_OS_SESSION_START_MAX_CHARS</code></td><td><code>6000</code></td><td>Caps the re-hydration payload. Lower it for tight context budgets.</td></tr>
+  <tr><td><code>MEMORY_OS_SESSION_START</code></td><td><code>on</code></td><td>Set to <code>off</code> to disable injection entirely (local models / low-context setups).</td></tr>
+</table>
+
+<h2><span class="n">07</span> Optional modules — proposed, never forced</h2>
+<p>All of these are off by default. The agent proposes them at the appropriate moment and you confirm — except CodeGraph, which auto-engages for code because it only saves tokens.</p>
+<table>
+  <tr><th>Tool</th><th>Proposed when</th><th>For</th></tr>
+  <tr><td>CodeGraph</td><td>code work (auto-detected)</td><td>token-cheap code queries (agent-facing)</td></tr>
+  <tr><td>Understand-Anything</td><td>you land in an unfamiliar project</td><td>comprehension graph + onboarding (you-facing)</td></tr>
+  <tr><td>taste-skill</td><td>designing / redesigning a site or UI</td><td>design quality, avoid generic output</td></tr>
+  <tr><td>Firecrawl</td><td>new project from an idea / a URL</td><td>web → clean markdown into the knowledge layer</td></tr>
+  <tr><td>knowledge-graph layer</td><td>notes piling into <code>raw/</code></td><td>typed-edge wiki (raw/wiki/outputs + index)</td></tr>
+</table>
+
+<h2><span class="n">08</span> How best to use it</h2>
+<div class="two">
+  <div class="card do">
+    <p><b>Do</b></p>
+    <ul>
+      <li>Start every multi-step task by writing <code>PLAN.md</code> with a real <b>Definition of Done</b> at the top.</li>
+      <li>Let the agent checkpoint as it goes; run <code>/checkpoint</code> before anything risky.</li>
+      <li>Trust the re-hydration — after a compact, resume from <code>STATE.md</code>'s <code>Next action</code> rather than re-reading everything.</li>
+      <li>Commit <code>.memory/</code> often; the journal + git is your audit trail.</li>
+      <li>Keep <code>STATE.md</code> lean — it's re-injected every session under the cap.</li>
+    </ul>
+  </div>
+  <div class="card dont">
+    <p><b>Don't</b></p>
+    <ul>
+      <li>Don't hand-edit <code>JOURNAL.md</code> history or rewrite <code>PLAN.md</code> mid-task — reflect progress in <code>STATE.md</code>.</li>
+      <li>Don't let <code>STATE.md</code> grow into an essay; it gets truncated at the cap.</li>
+      <li>Don't expect the PreCompact hook to capture un-written state — durability comes from <i>continuous</i> checkpointing by the skill, not the hook.</li>
+      <li>Don't commit a consuming project's live <code>.memory/</code> into <i>this</i> repo (it's gitignored here on purpose).</li>
+    </ul>
+  </div>
+</div>
+
+<h2><span class="n">09</span> Verify it's working</h2>
+<pre><span class="c"># run the test suite</span>
+npm test            <span class="c"># → 18 pass</span>
+
+<span class="c"># simulate a session start against a project with .memory/STATE.md</span>
+echo '{"hook_event_name":"SessionStart","source":"startup","cwd":"<span class="y">/path/to/project</span>"}' \
+  | node hooks/scripts/rehydrate.mjs
+<span class="c"># → {"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"…STATE…"}}</span>
+
+<span class="c"># the real acceptance test: in Claude Code, start a task, run /compact,</span>
+<span class="c"># and confirm the agent resumes from STATE.md without re-reading the codebase.</span></pre>
+
+<h2><span class="n">10</span> Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>Likely cause / fix</th></tr>
+  <tr><td>No context injected on start</td><td>Project has no <code>.memory/STATE.md</code> (copy <code>templates/.memory</code>), or <code>MEMORY_OS_SESSION_START=off</code>.</td></tr>
+  <tr><td>Re-hydration feels truncated</td><td>STATE.md exceeds the cap. Trim it, or raise <code>MEMORY_OS_SESSION_START_MAX_CHARS</code>.</td></tr>
+  <tr><td>Hook not firing</td><td>Plugin not installed / hooks not in <code>settings.json</code>; <code>node</code> not on PATH. Check <code>/plugin</code>.</td></tr>
+  <tr><td>State drifts from reality</td><td>The agent isn't checkpointing — make sure the <code>memory-checkpoint</code> skill is active and run <code>/checkpoint</code> at milestones.</td></tr>
+</table>
+
+<div class="foot">
+  memory-os v0.1.0 · part of the Acronizer project · the context window is a cache, disk is the source of truth.
+</div>
+
+</div>
+</body>
+</html>

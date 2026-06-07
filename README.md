@@ -2,6 +2,8 @@
 
 Durable working memory for AI coding agents. The context window is a cache; `.memory/` is the source of truth. Survives compaction and new sessions; keeps live context small.
 
+📖 **Full manual:** [`docs/manual.html`](docs/manual.html) — install, the loop, config, optional modules, best practices, troubleshooting.
+
 ## What it does
 - `.memory/PLAN.md` (immutable, with Definition of Done) · `STATE.md` (live snapshot) · `JOURNAL.md` (append-only log).
 - `SessionStart` hook re-injects a **bounded** snapshot of STATE + recent journal.

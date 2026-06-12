@@ -1,7 +1,7 @@
 {
   "name": "memory-os",
-  "version": "0.1.0",
-  "description": "Durable working memory for AI coding agents: bounded re-hydration across compaction and sessions.",
+  "version": "0.2.0",
+  "description": "Durable working memory for AI coding agents: bounded re-hydration across compaction and sessions. Includes context inventory to prevent redundant reads and session depth breakpoints to optimise token usage on large projects.",
   "author": {
     "name": "tpop78"
   }

@@ -46,6 +46,15 @@ export function composeContext({ state, journalTail, planExists, maxChars }) {
   if (planExists) parts.push('Active plan: see .memory/PLAN.md (definition of done at top).');
   if (state) parts.push('## Current state (.memory/STATE.md)\n' + state.trim());
   if (journalTail) parts.push('## Recent journal\n' + journalTail.trim());
+
+  const inventoryLines = [];
+  if (state) inventoryLines.push('- .memory/STATE.md (full)');
+  if (journalTail) inventoryLines.push('- .memory/JOURNAL.md (recent entries)');
+  if (planExists) inventoryLines.push('- .memory/PLAN.md (referenced)');
+  if (inventoryLines.length > 0) {
+    parts.push('## Already in context this session\n' + inventoryLines.join('\n'));
+  }
+
   let out = parts.join('\n\n').trim();
   if (out.length > maxChars) {
     const marker = '\n…[truncated]';

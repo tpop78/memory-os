@@ -86,3 +86,15 @@ test('composeContext stays within maxChars and marks truncation', () => {
   assert.ok(out.length <= 6000, `length ${out.length} <= 6000`);
   assert.match(out, /\[truncated\]/);
 });
+
+test('composeContext inventory includes PLAN line when planExists is true', () => {
+  const out = composeContext({ state: '## Now\nPhase 1', journalTail: 'did x', planExists: true, maxChars: 6000 });
+  assert.match(out, /## Already in context this session/);
+  assert.match(out, /\.memory\/PLAN\.md \(referenced\)/);
+});
+
+test('composeContext inventory omits PLAN line when planExists is false', () => {
+  const out = composeContext({ state: '## Now\nPhase 1', journalTail: 'did x', planExists: false, maxChars: 6000 });
+  assert.match(out, /## Already in context this session/);
+  assert.doesNotMatch(out, /PLAN\.md/);
+});

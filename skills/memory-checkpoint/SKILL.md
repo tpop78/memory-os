@@ -11,6 +11,13 @@ The `.memory/` directory is the source of truth for "what we're doing, how far w
 
 Check the `## Already in context this session` section injected by the SessionStart hook. If a file is listed there, **skip the Read call** — the content is already present in your context window.
 
+The injected block looks like:
+
+    ## Already in context this session
+    - .memory/STATE.md (full)
+    - .memory/JOURNAL.md (recent entries)
+    - .memory/PLAN.md (referenced)
+
 Files listed by the hook:
 - `.memory/STATE.md (full)` — do not re-read STATE.md; use the injected copy
 - `.memory/JOURNAL.md (recent entries)` — do not re-read JOURNAL.md
@@ -39,7 +46,7 @@ STATE.md carries a `## Session depth` section:
     ## Session depth
     checkpoints: 0  |  break_at: 15
 
-On every checkpoint write, increment `checkpoints` by 1.
+On every checkpoint write, if this is the first checkpoint of a new session, reset `checkpoints` to 0 first. Then increment `checkpoints` by 1.
 
 When `checkpoints >= break_at`:
 

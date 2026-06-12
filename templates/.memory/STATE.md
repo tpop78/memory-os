@@ -14,3 +14,6 @@
 <the single next concrete step>
 
 ## Blockers / decisions
+
+## Session depth
+checkpoints: 0  |  break_at: 15

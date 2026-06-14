@@ -1,5 +1,7 @@
-import { readFileSync, existsSync, appendFileSync } from 'node:fs';
+import { readFileSync, existsSync, appendFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+export const MEMORY_FILES = ['PLAN.md', 'STATE.md', 'JOURNAL.md'];
 
 export function resolveMemoryDir(cwd) {
   return join(cwd, '.memory');
@@ -30,6 +32,28 @@ export function tailJournal(memoryDir, n) {
 
 export function appendJournal(memoryDir, line) {
   appendFileSync(join(memoryDir, 'JOURNAL.md'), `${line}\n`);
+}
+
+/**
+ * Initialise the .memory/ loop in a project: create the directory and seed
+ * PLAN.md / STATE.md / JOURNAL.md from templates. Idempotent — never overwrites
+ * an existing file, so it is safe to re-run. Returns what it created vs kept.
+ */
+export function scaffoldMemory(cwd, templatesDir) {
+  const dir = resolveMemoryDir(cwd);
+  mkdirSync(dir, { recursive: true });
+  const created = [];
+  const skipped = [];
+  for (const file of MEMORY_FILES) {
+    const dest = join(dir, file);
+    if (existsSync(dest)) {
+      skipped.push(file);
+      continue;
+    }
+    copyFileSync(join(templatesDir, file), dest);
+    created.push(file);
+  }
+  return { dir, created, skipped };
 }
 
 export function getMaxChars(env) {

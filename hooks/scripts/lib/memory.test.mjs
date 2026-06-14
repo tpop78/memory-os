@@ -55,6 +55,41 @@ test('appendJournal adds a line and creates the file if needed', () => {
   assert.match(body, /first\nsecond\n$/);
 });
 
+import { scaffoldMemory, MEMORY_FILES } from './memory.mjs';
+
+function templatesFixture() {
+  const dir = mkdtempSync(join(tmpdir(), 'memos-tpl-'));
+  for (const f of MEMORY_FILES) writeFileSync(join(dir, f), `# template ${f}\n`);
+  return dir;
+}
+
+test('scaffoldMemory creates all .memory files when missing', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'memos-proj-'));
+  const tpl = templatesFixture();
+  const res = scaffoldMemory(cwd, tpl);
+  assert.deepEqual(res.created.sort(), [...MEMORY_FILES].sort());
+  assert.deepEqual(res.skipped, []);
+  for (const f of MEMORY_FILES) {
+    assert.match(readFileSync(join(cwd, '.memory', f), 'utf8'), new RegExp(`template ${f}`));
+  }
+});
+
+test('scaffoldMemory is idempotent and never overwrites existing files', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'memos-proj-'));
+  const tpl = templatesFixture();
+  mkdirSync(join(cwd, '.memory'), { recursive: true });
+  writeFileSync(join(cwd, '.memory', 'STATE.md'), 'CUSTOM STATE — keep me');
+
+  const res = scaffoldMemory(cwd, tpl);
+  assert.ok(res.created.includes('PLAN.md') && res.created.includes('JOURNAL.md'));
+  assert.deepEqual(res.skipped, ['STATE.md']);
+  assert.equal(readFileSync(join(cwd, '.memory', 'STATE.md'), 'utf8'), 'CUSTOM STATE — keep me');
+
+  const again = scaffoldMemory(cwd, tpl);
+  assert.deepEqual(again.created, []);
+  assert.deepEqual(again.skipped.sort(), [...MEMORY_FILES].sort());
+});
+
 import { getMaxChars, isEnabled, composeContext } from './memory.mjs';
 
 test('getMaxChars defaults to 6000 and parses env', () => {

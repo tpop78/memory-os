@@ -147,3 +147,37 @@ test('detectMode returns "snapshot" outside git', () => {
   const dir = mkdtempSync(join(tmpdir(), 'autoloop-nogit-'));
   assert.equal(detectMode(dir), 'snapshot');
 });
+
+import { mkdirSync } from 'node:fs';
+import { snapshotSave, snapshotPromoteBest, snapshotRestoreBest } from './autoloop.mjs';
+
+function projectFixture() {
+  const cwd = mkdtempSync(join(tmpdir(), 'autoloop-proj-'));
+  const runDir = join(cwd, '.memory', 'autoloop', 'jun15');
+  mkdirSync(runDir, { recursive: true });
+  writeFileSync(join(cwd, 'asset.txt'), 'v0');
+  return { cwd, runDir };
+}
+
+test('snapshotSave copies the asset into rounds/NNN preserving relative path', () => {
+  const { cwd, runDir } = projectFixture();
+  const dest = snapshotSave(runDir, 0, ['asset.txt'], cwd);
+  assert.equal(readFileSync(join(dest, 'asset.txt'), 'utf8'), 'v0');
+  assert.match(dest, /rounds\/000$/);
+});
+
+test('snapshotPromoteBest copies a round into best/', () => {
+  const { cwd, runDir } = projectFixture();
+  snapshotSave(runDir, 2, ['asset.txt'], cwd);
+  const best = snapshotPromoteBest(runDir, 2, ['asset.txt']);
+  assert.equal(readFileSync(join(best, 'asset.txt'), 'utf8'), 'v0');
+});
+
+test('snapshotRestoreBest overwrites a changed asset with best/', () => {
+  const { cwd, runDir } = projectFixture();
+  snapshotSave(runDir, 0, ['asset.txt'], cwd);
+  snapshotPromoteBest(runDir, 0, ['asset.txt']);
+  writeFileSync(join(cwd, 'asset.txt'), 'EXPERIMENT THAT LOST');
+  snapshotRestoreBest(runDir, ['asset.txt'], cwd);
+  assert.equal(readFileSync(join(cwd, 'asset.txt'), 'utf8'), 'v0');
+});

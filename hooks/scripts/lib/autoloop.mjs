@@ -1,7 +1,8 @@
 // memory-os: Auto Research Engineer — deterministic helpers for the optimization loop.
 // Pure/IO functions only; the loop logic itself lives in skills/auto-research-engineer/SKILL.md.
 
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, mkdirSync, copyFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
@@ -115,5 +116,40 @@ export function detectMode(dir) {
     return out === 'true' ? 'git' : 'snapshot';
   } catch {
     return 'snapshot';
+  }
+}
+
+const pad = (n) => String(n).padStart(3, '0');
+
+/** Copy each relPath (relative to cwd) into runDir/rounds/NNN/relPath. Returns the round dir. */
+export function snapshotSave(runDir, round, relPaths, cwd) {
+  const dest = join(runDir, 'rounds', pad(round));
+  for (const rel of relPaths) {
+    const to = join(dest, rel);
+    mkdirSync(dirname(to), { recursive: true });
+    copyFileSync(join(cwd, rel), to);
+  }
+  return dest;
+}
+
+/** Copy a saved round's files into runDir/best/. Returns the best dir. */
+export function snapshotPromoteBest(runDir, round, relPaths) {
+  const src = join(runDir, 'rounds', pad(round));
+  const best = join(runDir, 'best');
+  for (const rel of relPaths) {
+    const to = join(best, rel);
+    mkdirSync(dirname(to), { recursive: true });
+    copyFileSync(join(src, rel), to);
+  }
+  return best;
+}
+
+/** Restore best/ back over the live asset paths (revert a losing experiment). */
+export function snapshotRestoreBest(runDir, relPaths, cwd) {
+  const best = join(runDir, 'best');
+  for (const rel of relPaths) {
+    const to = join(cwd, rel);
+    mkdirSync(dirname(to), { recursive: true });
+    copyFileSync(join(best, rel), to);
   }
 }

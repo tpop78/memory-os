@@ -134,3 +134,16 @@ test('assertUnchanged flags a tampered file', () => {
   assert.equal(res.ok, false);
   assert.deepEqual(res.changed, [a]);
 });
+
+import { execFileSync } from 'node:child_process';
+import { detectMode } from './autoloop.mjs';
+
+test('detectMode returns "git" inside a git work-tree', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoloop-git-'));
+  execFileSync('git', ['-C', dir, 'init', '-q']);
+  assert.equal(detectMode(dir), 'git');
+});
+test('detectMode returns "snapshot" outside git', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoloop-nogit-'));
+  assert.equal(detectMode(dir), 'snapshot');
+});

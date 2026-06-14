@@ -3,6 +3,7 @@
 
 import { appendFileSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 /** Read the score a SCORING run printed: the last numeric token on the last line that has one. */
 export function extractScore(stdout) {
@@ -104,4 +105,15 @@ export function assertUnchanged(paths, baseline) {
   const now = hashFiles(paths);
   const changed = paths.filter((p) => now[p] !== baseline[p]);
   return { ok: changed.length === 0, changed };
+}
+
+/** "git" if `dir` is inside a git work-tree, else "snapshot". */
+export function detectMode(dir) {
+  try {
+    const out = execFileSync('git', ['-C', dir, 'rev-parse', '--is-inside-work-tree'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return out === 'true' ? 'git' : 'snapshot';
+  } catch {
+    return 'snapshot';
+  }
 }

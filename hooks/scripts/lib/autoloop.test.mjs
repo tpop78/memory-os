@@ -35,3 +35,38 @@ test('isBetter: null/NaN candidate never wins', () => {
   assert.equal(isBetter(null, 1.0, 'minimize'), false);
   assert.equal(isBetter(NaN, 1.0, 'minimize'), false);
 });
+
+import { parseDurationMs, parseStopConditions } from './autoloop.mjs';
+
+test('parseDurationMs handles units and defaults to seconds', () => {
+  assert.equal(parseDurationMs('500ms'), 500);
+  assert.equal(parseDurationMs('30s'), 30000);
+  assert.equal(parseDurationMs('5m'), 300000);
+  assert.equal(parseDurationMs('8h'), 28800000);
+  assert.equal(parseDurationMs('45'), 45000);
+  assert.equal(parseDurationMs('junk'), null);
+});
+
+test('parseStopConditions returns defaults when nothing is specified', () => {
+  assert.deepEqual(parseStopConditions('# nothing here'), {
+    targetScore: null, plateauRounds: 20, wallclockCapMs: 28800000,
+  });
+});
+test('parseStopConditions parses values from markdown-ish lines', () => {
+  const text = [
+    '- target_score: 0.95',
+    '- plateau_rounds: 30',
+    '- wallclock_cap: 4h',
+  ].join('\n');
+  assert.deepEqual(parseStopConditions(text), {
+    targetScore: 0.95, plateauRounds: 30, wallclockCapMs: 14400000,
+  });
+});
+test('parseStopConditions treats target_score "none" as null', () => {
+  assert.equal(parseStopConditions('target_score: none').targetScore, null);
+});
+test('parseStopConditions falls back to defaults on garbage values', () => {
+  const c = parseStopConditions('plateau_rounds: abc\nwallclock_cap: xyz');
+  assert.equal(c.plateauRounds, 20);
+  assert.equal(c.wallclockCapMs, 28800000);
+});

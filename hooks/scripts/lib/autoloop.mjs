@@ -21,3 +21,38 @@ export function isBetter(candidate, best, direction) {
   if (best == null) return true;
   return direction === 'maximize' ? candidate > best : candidate < best;
 }
+
+/** Parse a duration like "500ms" | "30s" | "5m" | "8h" | "45" (bare = seconds) → ms, else null. */
+export function parseDurationMs(s) {
+  if (typeof s !== 'string') return null;
+  const m = s.trim().match(/^(\d+(?:\.\d+)?)\s*(ms|s|m|h)?$/i);
+  if (!m) return null;
+  const val = Number(m[1]);
+  const mult = { ms: 1, s: 1000, m: 60000, h: 3600000 }[(m[2] || 's').toLowerCase()];
+  return val * mult;
+}
+
+const DEFAULT_PLATEAU = 20;
+const DEFAULT_WALLCLOCK_MS = 8 * 3600000;
+
+/** Extract stop conditions from INSTRUCTIONS text. Missing/garbage → safe defaults. */
+export function parseStopConditions(text) {
+  const get = (key) => {
+    const re = new RegExp(`^\\s*[-*]?\\s*${key}\\s*[:=]\\s*(.+)$`, 'im');
+    const m = typeof text === 'string' ? text.match(re) : null;
+    return m ? m[1].trim() : null;
+  };
+  const targetRaw = get('target_score');
+  const plateauRaw = get('plateau_rounds');
+  const capRaw = get('wallclock_cap');
+
+  const target = targetRaw && !/^none$/i.test(targetRaw) ? Number(targetRaw) : null;
+  const plateau = plateauRaw != null ? parseInt(plateauRaw, 10) : DEFAULT_PLATEAU;
+  const capMs = capRaw != null ? parseDurationMs(capRaw) : DEFAULT_WALLCLOCK_MS;
+
+  return {
+    targetScore: Number.isFinite(target) ? target : null,
+    plateauRounds: Number.isInteger(plateau) && plateau > 0 ? plateau : DEFAULT_PLATEAU,
+    wallclockCapMs: Number.isFinite(capMs) && capMs > 0 ? capMs : DEFAULT_WALLCLOCK_MS,
+  };
+}

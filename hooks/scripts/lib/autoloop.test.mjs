@@ -101,3 +101,36 @@ test('appendResult writes a trailing-newline row to the tsv', () => {
   appendResult(tsv, { round: 0, ref: 'r0', score: 1.0, delta: null, costS: 1, status: 'baseline', change: 'x' });
   assert.match(readFileSync(tsv, 'utf8'), /^0\tr0\t1\.000000\tNA\t1\.0\tbaseline\tx\n$/);
 });
+
+import { writeFileSync } from 'node:fs';
+import { hashFiles, assertUnchanged } from './autoloop.mjs';
+
+test('hashFiles hashes present files and marks missing as null', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoloop-h-'));
+  const a = join(dir, 'a.md');
+  writeFileSync(a, 'hello');
+  const missing = join(dir, 'gone.md');
+  const h = hashFiles([a, missing]);
+  assert.equal(typeof h[a], 'string');
+  assert.equal(h[a].length, 64);
+  assert.equal(h[missing], null);
+});
+
+test('assertUnchanged is ok when nothing changed', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoloop-h-'));
+  const a = join(dir, 'INSTRUCTIONS.md');
+  writeFileSync(a, 'goal');
+  const baseline = hashFiles([a]);
+  assert.deepEqual(assertUnchanged([a], baseline), { ok: true, changed: [] });
+});
+
+test('assertUnchanged flags a tampered file', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoloop-h-'));
+  const a = join(dir, 'SCORING.sh');
+  writeFileSync(a, 'echo 1');
+  const baseline = hashFiles([a]);
+  writeFileSync(a, 'echo 0   # moved the goalposts');
+  const res = assertUnchanged([a], baseline);
+  assert.equal(res.ok, false);
+  assert.deepEqual(res.changed, [a]);
+});

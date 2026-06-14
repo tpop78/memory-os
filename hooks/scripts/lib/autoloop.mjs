@@ -1,7 +1,8 @@
 // memory-os: Auto Research Engineer — deterministic helpers for the optimization loop.
 // Pure/IO functions only; the loop logic itself lives in skills/auto-research-engineer/SKILL.md.
 
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 /** Read the score a SCORING run printed: the last numeric token on the last line that has one. */
 export function extractScore(stdout) {
@@ -86,4 +87,21 @@ export function formatResultRow({ round, ref, score, delta, costS, status, chang
 /** Append a formatted ledger row (with trailing newline) to the RESULTS.tsv at `tsvPath`. */
 export function appendResult(tsvPath, row) {
   appendFileSync(tsvPath, formatResultRow(row) + '\n');
+}
+
+/** sha256 each path; unreadable/missing → null. */
+export function hashFiles(paths) {
+  const out = {};
+  for (const p of paths) {
+    try { out[p] = createHash('sha256').update(readFileSync(p)).digest('hex'); }
+    catch { out[p] = null; }
+  }
+  return out;
+}
+
+/** Compare current hashes to a baseline map. Used to detect any edit to INSTRUCTIONS/SCORING. */
+export function assertUnchanged(paths, baseline) {
+  const now = hashFiles(paths);
+  const changed = paths.filter((p) => now[p] !== baseline[p]);
+  return { ok: changed.length === 0, changed };
 }

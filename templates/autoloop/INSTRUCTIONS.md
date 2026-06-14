@@ -8,7 +8,7 @@
 ## Metric
 - name: <e.g. val_bpb, load_ms, reply_rate>
 - direction: minimize        <!-- minimize | maximize -->
-- target_score: none         <!-- a number to stop at, or "none" -->
+<!-- set the number to stop at once, under Stop conditions below -->
 
 ## Asset (the ONLY thing the agent may change)
 - <relative/path/to/asset>   <!-- one or more lines; nothing outside these is writable -->

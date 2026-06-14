@@ -11,6 +11,7 @@ Durable working memory for AI coding agents. The context window is a cache; `.me
 - `PreCompact` hook marks the journal and re-injects STATE so it survives compaction.
 - `memory-checkpoint` skill keeps STATE/JOURNAL current; `/checkpoint` flushes on demand.
 - `situational-suggestions` proposes optional tools (CodeGraph, Understand-Anything, taste-skill, Firecrawl, knowledge layer) — you confirm.
+- `/auto-research` runs an autonomous optimize loop on ONE asset toward ONE metric (keep winners, revert losers).
 
 ## Install (plugin)
 ```
@@ -36,6 +37,15 @@ re-inject STATE + recent journal so the agent resumes without re-reading the cod
 
 **Boundary:** `.memory/` is the *live working state of the current effort*. Durable cross-session
 facts and preferences belong in your agent's own long-term memory, not here.
+
+## The optimize loop (Auto Research)
+Once you have a working baseline and a single objective number to push, `/auto-research` stands up
+an autonomous optimization run under `.memory/autoloop/<tag>/`: a human-locked **INSTRUCTIONS.md**
+(goal + metric + asset path + stop conditions), a locked **SCORING.sh** measuring stick (prints one
+number; the agent never edits it), and a **RESULTS.tsv** ledger. The `auto-research-engineer` skill
+then loops unattended — change → score → keep the winner / revert the loser → log — until a target,
+a plateau, or a wall-clock cap is hit. Keep/revert uses a git branch when the asset is in git, else
+file snapshots. `situational-suggestions` offers this automatically once a measurable baseline exists.
 
 **Git:** commit `.memory/` for shareable team memory, or gitignore it for local-only. Suggested
 default — commit `PLAN.md` + `STATE.md`; commit `JOURNAL.md` too unless its per-compaction churn

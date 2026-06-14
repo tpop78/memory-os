@@ -148,7 +148,7 @@ test('detectMode returns "snapshot" outside git', () => {
   assert.equal(detectMode(dir), 'snapshot');
 });
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, existsSync } from 'node:fs';
 import { snapshotSave, snapshotPromoteBest, snapshotRestoreBest } from './autoloop.mjs';
 
 function projectFixture() {
@@ -180,4 +180,39 @@ test('snapshotRestoreBest overwrites a changed asset with best/', () => {
   writeFileSync(join(cwd, 'asset.txt'), 'EXPERIMENT THAT LOST');
   snapshotRestoreBest(runDir, ['asset.txt'], cwd);
   assert.equal(readFileSync(join(cwd, 'asset.txt'), 'utf8'), 'v0');
+});
+
+import { resolveAutoloopDir, scaffoldAutoloop, AUTOLOOP_FILES } from './autoloop.mjs';
+
+function tplFixture() {
+  const dir = mkdtempSync(join(tmpdir(), 'autoloop-tpl-'));
+  for (const f of AUTOLOOP_FILES) writeFileSync(join(dir, f), `# template ${f}\n`);
+  return dir;
+}
+
+test('AUTOLOOP_FILES is the three-file system', () => {
+  assert.deepEqual(AUTOLOOP_FILES, ['INSTRUCTIONS.md', 'SCORING.sh', 'RESULTS.tsv']);
+});
+test('resolveAutoloopDir nests under .memory/autoloop/<tag>', () => {
+  assert.equal(resolveAutoloopDir('/p', 'jun15'), join('/p', '.memory', 'autoloop', 'jun15'));
+});
+test('scaffoldAutoloop creates all files when missing', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'autoloop-proj-'));
+  const tpl = tplFixture();
+  const res = scaffoldAutoloop(cwd, 'jun15', tpl);
+  assert.deepEqual(res.created.sort(), [...AUTOLOOP_FILES].sort());
+  assert.deepEqual(res.skipped, []);
+  for (const f of AUTOLOOP_FILES) assert.ok(existsSync(join(res.dir, f)));
+});
+test('scaffoldAutoloop is idempotent and never overwrites', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'autoloop-proj-'));
+  const tpl = tplFixture();
+  const dir = resolveAutoloopDir(cwd, 'jun15');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'INSTRUCTIONS.md'), 'CUSTOM — keep me');
+  const res = scaffoldAutoloop(cwd, 'jun15', tpl);
+  assert.deepEqual(res.skipped, ['INSTRUCTIONS.md']);
+  assert.equal(readFileSync(join(dir, 'INSTRUCTIONS.md'), 'utf8'), 'CUSTOM — keep me');
+  const again = scaffoldAutoloop(cwd, 'jun15', tpl);
+  assert.deepEqual(again.created, []);
 });

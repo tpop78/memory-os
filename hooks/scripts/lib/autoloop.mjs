@@ -1,7 +1,7 @@
 // memory-os: Auto Research Engineer — deterministic helpers for the optimization loop.
 // Pure/IO functions only; the loop logic itself lives in skills/auto-research-engineer/SKILL.md.
 
-import { appendFileSync, readFileSync, mkdirSync, copyFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -152,4 +152,25 @@ export function snapshotRestoreBest(runDir, relPaths, cwd) {
     mkdirSync(dirname(to), { recursive: true });
     copyFileSync(join(best, rel), to);
   }
+}
+
+export const AUTOLOOP_FILES = ['INSTRUCTIONS.md', 'SCORING.sh', 'RESULTS.tsv'];
+
+export function resolveAutoloopDir(cwd, tag) {
+  return join(cwd, '.memory', 'autoloop', tag);
+}
+
+/** Seed .memory/autoloop/<tag>/ from templates. Idempotent — never overwrites. */
+export function scaffoldAutoloop(cwd, tag, templatesDir) {
+  const dir = resolveAutoloopDir(cwd, tag);
+  mkdirSync(dir, { recursive: true });
+  const created = [];
+  const skipped = [];
+  for (const file of AUTOLOOP_FILES) {
+    const dest = join(dir, file);
+    if (existsSync(dest)) { skipped.push(file); continue; }
+    copyFileSync(join(templatesDir, file), dest);
+    created.push(file);
+  }
+  return { dir, created, skipped };
 }

@@ -1,6 +1,8 @@
 // memory-os: Auto Research Engineer — deterministic helpers for the optimization loop.
 // Pure/IO functions only; the loop logic itself lives in skills/auto-research-engineer/SKILL.md.
 
+import { appendFileSync } from 'node:fs';
+
 /** Read the score a SCORING run printed: the last numeric token on the last line that has one. */
 export function extractScore(stdout) {
   if (typeof stdout !== 'string') return null;
@@ -55,4 +57,33 @@ export function parseStopConditions(text) {
     plateauRounds: Number.isInteger(plateau) && plateau > 0 ? plateau : DEFAULT_PLATEAU,
     wallclockCapMs: Number.isFinite(capMs) && capMs > 0 ? capMs : DEFAULT_WALLCLOCK_MS,
   };
+}
+
+export const RESULTS_HEADER = 'round\tref\tscore\tdelta\tcost_s\tstatus\tchange';
+
+function tsvSafe(s) {
+  return String(s).replace(/[\t\r\n]+/g, ' ').trim();
+}
+
+/** Format one ledger row. score/delta null|NaN → "NA"; score 6dp; delta signed 6dp; cost 1dp. */
+export function formatResultRow({ round, ref, score, delta, costS, status, change }) {
+  const naNum = (v, dp, signed) => {
+    if (v == null || Number.isNaN(v)) return 'NA';
+    const s = Number(v).toFixed(dp);
+    return signed && v >= 0 ? `+${s}` : s;
+  };
+  return [
+    String(round),
+    tsvSafe(ref),
+    naNum(score, 6, false),
+    naNum(delta, 6, true),
+    naNum(costS, 1, false),
+    tsvSafe(status),
+    tsvSafe(change),
+  ].join('\t');
+}
+
+/** Append a formatted ledger row (with trailing newline) to the RESULTS.tsv at `tsvPath`. */
+export function appendResult(tsvPath, row) {
+  appendFileSync(tsvPath, formatResultRow(row) + '\n');
 }

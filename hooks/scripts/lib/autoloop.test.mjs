@@ -70,3 +70,34 @@ test('parseStopConditions falls back to defaults on garbage values', () => {
   assert.equal(c.plateauRounds, 20);
   assert.equal(c.wallclockCapMs, 28800000);
 });
+
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { RESULTS_HEADER, formatResultRow, appendResult } from './autoloop.mjs';
+
+test('RESULTS_HEADER is the agreed tab-separated schema', () => {
+  assert.equal(RESULTS_HEADER, 'round\tref\tscore\tdelta\tcost_s\tstatus\tchange');
+});
+test('formatResultRow: baseline row has NA delta and 6dp score', () => {
+  const row = formatResultRow({ round: 0, ref: 'r0', score: 0.9979, delta: null, costS: 312.4, status: 'baseline', change: 'baseline as-is' });
+  assert.equal(row, '0\tr0\t0.997900\tNA\t312.4\tbaseline\tbaseline as-is');
+});
+test('formatResultRow: keep row shows signed delta', () => {
+  const row = formatResultRow({ round: 1, ref: 'a1b2c3d', score: 0.9932, delta: -0.0047, costS: 305.1, status: 'keep', change: 'raise LR' });
+  assert.equal(row, '1\ta1b2c3d\t0.993200\t-0.004700\t305.1\tkeep\traise LR');
+});
+test('formatResultRow: crash row is NA score + NA delta', () => {
+  const row = formatResultRow({ round: 3, ref: 'r3', score: null, delta: null, costS: 14.2, status: 'crash', change: 'OOM' });
+  assert.equal(row, '3\tr3\tNA\tNA\t14.2\tcrash\tOOM');
+});
+test('formatResultRow: sanitizes tabs/newlines in change + ref', () => {
+  const row = formatResultRow({ round: 2, ref: 'r2', score: 1.0, delta: 0.5, costS: 1, status: 'revert', change: 'tried\tA\nand B' });
+  assert.equal(row, '2\tr2\t1.000000\t+0.500000\t1.0\trevert\ttried A and B');
+});
+test('appendResult writes a trailing-newline row to the tsv', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'autoloop-'));
+  const tsv = join(dir, 'RESULTS.tsv');
+  appendResult(tsv, { round: 0, ref: 'r0', score: 1.0, delta: null, costS: 1, status: 'baseline', change: 'x' });
+  assert.match(readFileSync(tsv, 'utf8'), /^0\tr0\t1\.000000\tNA\t1\.0\tbaseline\tx\n$/);
+});

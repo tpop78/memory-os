@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isAutoInitEnabled, planAutoInit, summaryFor } from './autoinit.mjs';
+import { isAutoInitEnabled, planAutoInit, summaryFor, runAutoInit } from './autoinit.mjs';
 
 test('isAutoInitEnabled defaults ON (anything but "off")', () => {
   assert.equal(isAutoInitEnabled({}), true);
@@ -51,4 +51,61 @@ test('planAutoInit: no codegraph CLI → skip codegraph only', () => {
   const p = planAutoInit({ gitWorkTree: true, memoryExists: false, codegraphExists: false, codegraphCli: false });
   assert.equal(p.scaffoldMemory, true);
   assert.equal(p.initCodegraph, false);
+});
+
+test('runAutoInit performs both actions when the plan calls for them', () => {
+  const calls = [];
+  const summary = runAutoInit('/proj', '/tpl', {
+    isGitWorkTree: () => true,
+    hasCodegraphCli: () => true,
+    memoryExists: () => false,
+    codegraphExists: () => false,
+    doScaffold: () => calls.push('scaffold'),
+    startCodegraph: () => calls.push('codegraph'),
+  });
+  assert.deepEqual(calls, ['scaffold', 'codegraph']);
+  assert.match(summary, /scaffolded \.memory loop/);
+  assert.match(summary, /codegraph index in background/);
+});
+
+test('runAutoInit does nothing outside a git work-tree', () => {
+  const calls = [];
+  const summary = runAutoInit('/proj', '/tpl', {
+    isGitWorkTree: () => false,
+    hasCodegraphCli: () => true,
+    memoryExists: () => false,
+    codegraphExists: () => false,
+    doScaffold: () => calls.push('scaffold'),
+    startCodegraph: () => calls.push('codegraph'),
+  });
+  assert.deepEqual(calls, []);
+  assert.equal(summary, '');
+});
+
+test('runAutoInit swallows a throwing action and reflects only what succeeded', () => {
+  const calls = [];
+  const summary = runAutoInit('/proj', '/tpl', {
+    isGitWorkTree: () => true,
+    hasCodegraphCli: () => true,
+    memoryExists: () => false,
+    codegraphExists: () => false,
+    doScaffold: () => { throw new Error('boom'); },
+    startCodegraph: () => calls.push('codegraph'),
+  });
+  // scaffold threw → not reported; codegraph still ran
+  assert.deepEqual(calls, ['codegraph']);
+  assert.doesNotMatch(summary, /scaffolded/);
+  assert.match(summary, /codegraph/);
+});
+
+test('runAutoInit returns "" (never throws) when a probe dep throws', () => {
+  const summary = runAutoInit('/proj', '/tpl', {
+    isGitWorkTree: () => { throw new Error('no git'); },
+    hasCodegraphCli: () => true,
+    memoryExists: () => false,
+    codegraphExists: () => false,
+    doScaffold: () => {},
+    startCodegraph: () => {},
+  });
+  assert.equal(summary, '');
 });

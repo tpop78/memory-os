@@ -1,6 +1,11 @@
 // memory-os: SessionStart auto-init — decide and (in a later task) perform .memory + codegraph init.
 // Pure decision logic here; side effects live in runAutoInit (injectable deps).
 
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { execFileSync, spawn } from 'node:child_process';
+import { scaffoldMemory, resolveMemoryDir } from './memory.mjs';
+
 /** Auto-init is ON unless explicitly disabled. Mirrors isEnabled() in memory.mjs. */
 export function isAutoInitEnabled(env) {
   return env.MEMORY_OS_AUTO_INIT !== 'off';
@@ -22,4 +27,50 @@ export function planAutoInit({ gitWorkTree, memoryExists, codegraphExists, codeg
   const scaffoldMemory = !!gitWorkTree && !memoryExists;
   const initCodegraph = !!gitWorkTree && !codegraphExists && !!codegraphCli;
   return { scaffoldMemory, initCodegraph, summary: summaryFor({ scaffoldMemory, initCodegraph }) };
+}
+
+/** Real dependency implementations (overridable in tests). */
+function defaultDeps(templatesDir) {
+  return {
+    isGitWorkTree(cwd) {
+      try {
+        return execFileSync('git', ['-C', cwd, 'rev-parse', '--is-inside-work-tree'],
+          { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() === 'true';
+      } catch { return false; }
+    },
+    hasCodegraphCli() {
+      try { execFileSync('which', ['codegraph'], { stdio: 'ignore' }); return true; }
+      catch { return false; }
+    },
+    memoryExists(cwd) { return existsSync(join(resolveMemoryDir(cwd), 'STATE.md')); },
+    codegraphExists(cwd) { return existsSync(join(cwd, '.codegraph')); },
+    doScaffold(cwd) { scaffoldMemory(cwd, templatesDir); },
+    startCodegraph(cwd) {
+      spawn('codegraph', ['init'], { cwd, detached: true, stdio: 'ignore' }).unref();
+    },
+  };
+}
+
+/**
+ * Perform auto-init for `cwd`. Decides via planAutoInit, performs the chosen actions,
+ * and returns a one-line summary of what actually succeeded. Never throws.
+ * `deps` overrides individual dependencies (used by tests).
+ */
+export function runAutoInit(cwd, templatesDir, deps = {}) {
+  const d = { ...defaultDeps(templatesDir), ...deps };
+  let plan;
+  try {
+    plan = planAutoInit({
+      gitWorkTree: d.isGitWorkTree(cwd),
+      memoryExists: d.memoryExists(cwd),
+      codegraphExists: d.codegraphExists(cwd),
+      codegraphCli: d.hasCodegraphCli(),
+    });
+  } catch {
+    return '';
+  }
+  const done = { scaffoldMemory: false, initCodegraph: false };
+  if (plan.scaffoldMemory) { try { d.doScaffold(cwd); done.scaffoldMemory = true; } catch { /* non-fatal */ } }
+  if (plan.initCodegraph) { try { d.startCodegraph(cwd); done.initCodegraph = true; } catch { /* non-fatal */ } }
+  return summaryFor(done);
 }

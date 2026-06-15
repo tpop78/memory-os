@@ -1,5 +1,5 @@
-// memory-os: SessionStart auto-init — decide and (in a later task) perform .memory + codegraph init.
-// Pure decision logic here; side effects live in runAutoInit (injectable deps).
+// memory-os: SessionStart auto-init — scaffold .memory loop + start codegraph index.
+// Pure decision logic in planAutoInit; IO + injectable deps in runAutoInit.
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';

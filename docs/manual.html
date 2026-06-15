@@ -154,6 +154,7 @@ cp -r &lt;memory-os&gt;/templates/.memory ./.memory</pre>
   <tr><th>Env var</th><th>Default</th><th>Effect</th></tr>
   <tr><td><code>MEMORY_OS_SESSION_START_MAX_CHARS</code></td><td><code>6000</code></td><td>Caps the re-hydration payload. Lower it for tight context budgets.</td></tr>
   <tr><td><code>MEMORY_OS_SESSION_START</code></td><td><code>on</code></td><td>Set to <code>off</code> to disable injection entirely (local models / low-context setups).</td></tr>
+  <tr><td><code>MEMORY_OS_AUTO_INIT</code></td><td><code>on</code></td><td>On SessionStart in a git repo, scaffolds the <code>.memory/</code> loop (PLAN/STATE/JOURNAL) if absent, and starts a background <code>codegraph init</code> if the CLI is installed and <code>.codegraph/</code> is absent. Idempotent and fail-safe. Set to <code>off</code> to disable. (<code>.codegraph/</code> is a derived index — consider adding it to <code>.gitignore</code>.)</td></tr>
 </table>
 
 <h2><span class="n">07</span> Optional modules — proposed, never forced</h2>

@@ -54,6 +54,7 @@ is unwanted.
 ## Config
 - `MEMORY_OS_SESSION_START_MAX_CHARS` (default 6000) — re-hydration cap.
 - `MEMORY_OS_SESSION_START=off` — disable injection (low-context/local models).
+- `MEMORY_OS_AUTO_INIT` (default on) — on SessionStart, in a git repository that has no `.memory/`, memory-os scaffolds the loop (PLAN/STATE/JOURNAL from templates); and if the `codegraph` CLI is installed and there is no `.codegraph/`, it starts a CodeGraph index in the background. Idempotent — re-running is safe. Set to `off` to disable. (`.codegraph/` is a derived index you may want to add to `.gitignore`.)
 
 ## Test
 ```

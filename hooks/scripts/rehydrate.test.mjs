@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,4 +41,21 @@ test('rehydrate handles a project with no .memory dir', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'memos-empty-'));
   const json = JSON.parse(run(cwd));
   assert.equal(json.hookSpecificOutput.additionalContext, '');
+});
+
+test('auto-inits .memory in a fresh git repo when enabled (default)', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'memos-ai-'));
+  execFileSync('git', ['init'], { cwd, stdio: 'ignore' });
+  // Pre-create .codegraph so the real `codegraph init` is never spawned (hermetic test).
+  mkdirSync(join(cwd, '.codegraph'), { recursive: true });
+  const json = JSON.parse(run(cwd));
+  assert.match(json.hookSpecificOutput.additionalContext, /scaffolded \.memory loop/);
+  assert.ok(existsSync(join(cwd, '.memory', 'STATE.md')));
+});
+
+test('does NOT auto-init when MEMORY_OS_AUTO_INIT=off', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'memos-aioff-'));
+  execFileSync('git', ['init'], { cwd, stdio: 'ignore' });
+  run(cwd, { MEMORY_OS_AUTO_INIT: 'off' });
+  assert.ok(!existsSync(join(cwd, '.memory')));
 });

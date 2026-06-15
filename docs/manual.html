@@ -73,7 +73,7 @@
   <div class="pill-row">
     <span class="pill">Claude Code plugin</span>
     <span class="pill">Node 18+ · zero deps</span>
-    <span class="pill">18 tests</span>
+    <span class="pill">54 tests</span>
     <span class="pill">MIT</span>
     <span class="pill">github.com/tpop78/memory-os</span>
   </div>
@@ -167,7 +167,12 @@ cp -r &lt;memory-os&gt;/templates/.memory ./.memory</pre>
   <tr><td>knowledge-graph layer</td><td>notes piling into <code>raw/</code></td><td>typed-edge wiki (raw/wiki/outputs + index)</td></tr>
 </table>
 
-<h2><span class="n">08</span> How best to use it</h2>
+<h2><span class="n">08</span> The optimize loop (Auto Research)</h2>
+<div class="card">
+<p>Once you have a working baseline and a single objective number to push, <code>/auto-research</code> stands up an autonomous optimization run under <code>.memory/autoloop/&lt;tag&gt;/</code>: a human-locked <b>INSTRUCTIONS.md</b> (goal + metric + asset path + stop conditions), a locked <b>SCORING.sh</b> measuring stick (prints one number; the agent never edits it), and a <b>RESULTS.tsv</b> ledger. The <code>auto-research-engineer</code> skill then loops unattended — change → score → keep the winner / revert the loser → log — until a target, a plateau, or a wall-clock cap is hit. Keep/revert uses a git branch when the asset is in git, else file snapshots. <code>situational-suggestions</code> offers this automatically once a measurable baseline exists.</p>
+</div>
+
+<h2><span class="n">09</span> How best to use it</h2>
 <div class="two">
   <div class="card do">
     <p><b>Do</b></p>
@@ -190,9 +195,9 @@ cp -r &lt;memory-os&gt;/templates/.memory ./.memory</pre>
   </div>
 </div>
 
-<h2><span class="n">09</span> Verify it's working</h2>
+<h2><span class="n">10</span> Verify it's working</h2>
 <pre><span class="c"># run the test suite</span>
-npm test            <span class="c"># → 18 pass</span>
+npm test            <span class="c"># → 54 pass</span>
 
 <span class="c"># simulate a session start against a project with .memory/STATE.md</span>
 echo '{"hook_event_name":"SessionStart","source":"startup","cwd":"<span class="y">/path/to/project</span>"}' \
@@ -202,7 +207,7 @@ echo '{"hook_event_name":"SessionStart","source":"startup","cwd":"<span class="y
 <span class="c"># the real acceptance test: in Claude Code, start a task, run /compact,</span>
 <span class="c"># and confirm the agent resumes from STATE.md without re-reading the codebase.</span></pre>
 
-<h2><span class="n">10</span> Troubleshooting</h2>
+<h2><span class="n">11</span> Troubleshooting</h2>
 <table>
   <tr><th>Symptom</th><th>Likely cause / fix</th></tr>
   <tr><td>No context injected on start</td><td>Project has no <code>.memory/STATE.md</code> (copy <code>templates/.memory</code>), or <code>MEMORY_OS_SESSION_START=off</code>.</td></tr>

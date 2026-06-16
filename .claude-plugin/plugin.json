@@ -1,7 +1,7 @@
 {
   "name": "memory-os",
   "version": "0.5.0",
-  "description": "Durable working memory for AI coding agents: bounded re-hydration across compaction and sessions. /memory-init scaffolds the .memory/ loop; context inventory prevents redundant reads and session depth breakpoints optimise token usage on large projects. /auto-research runs an autonomous optimize loop on one asset toward one metric.",
+  "description": "Durable working memory for AI coding agents: bounded re-hydration across compaction and sessions. Auto-inits .memory/ loop + CodeGraph index on SessionStart (MEMORY_OS_AUTO_INIT, default on). /memory-init scaffolds the loop manually; context inventory prevents redundant reads; /auto-research runs an autonomous optimize loop on one asset toward one metric.",
   "author": {
     "name": "tpop78"
   }

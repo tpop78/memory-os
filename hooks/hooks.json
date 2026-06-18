@@ -22,6 +22,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/headroom-learn.mjs",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }

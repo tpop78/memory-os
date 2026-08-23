@@ -31,8 +31,9 @@ repeatable measuring stick. **If a must-have fails, say so plainly and propose a
 target instead of pretending.**
 
 ## Mode (set in INSTRUCTIONS)
-- **git** — the asset is in a git repo: work on branch `autoresearch/<tag>`, commit each kept round,
-  `git reset --hard` to revert a loser.
+- **git-worktree** — create a dedicated `autoresearch/<tag>` worktree after the human confirms the
+  run. Snapshot only the declared asset paths before each round; commit only those paths for a winner
+  and restore only those paths from `best/` for a loser. Never run repository-wide reset or clean.
 - **snapshot** — not in git: before each change, the current best lives in `.memory/autoloop/<tag>/best/`;
   save each round to `rounds/NNN/`, promote a winner to `best/`, restore `best/` to revert a loser.
 
@@ -44,8 +45,9 @@ target instead of pretending.**
 4. **Score.** Run `SCORING.sh` within the per-round budget; read the single number. If it exceeds 2×
    the budget, kill it and treat the round as a crash.
 5. **Decide** (direction from INSTRUCTIONS):
-   - better than best → **keep**: commit (git) or promote snapshot to `best/`. New best.
-   - not better → **revert**: `git reset --hard` (git) or restore `best/` (snapshot).
+   - better than best → **keep**: promote the round to `best/`, then commit only declared assets in
+     git-worktree mode. New best.
+   - not better → **revert**: restore only declared asset paths from `best/`.
    - crashed / non-numeric → if trivially fixable (typo, missing import) fix and retry once; else
      **crash**: revert and move on.
 6. **Log** one row to RESULTS.tsv (`status` = baseline|keep|revert|crash). Append a one-line note to
@@ -57,9 +59,14 @@ target instead of pretending.**
 - **Do not ask "should I continue?"** Once looping, run unattended until a stop condition or the human
   interrupts. This intentionally overrides memory-os's `break_at` checkpoint nudge for the run.
 - **Write only the declared asset path(s).** Never edit INSTRUCTIONS.md or SCORING.sh.
+- **Stay isolated.** Git runs happen only in the recorded dedicated worktree. Refuse to start if the
+  worktree cannot be established or any declared path escapes it.
+- **Preserve unrelated work.** Never use repository-wide reset, clean, restore, checkout, or broad
+  staging. Snapshot and restore only the declared assets.
 - **Every loser reverts to a known-good state** — never leave the asset broken.
 - **Bounded:** the stop conditions guarantee the run ends; never loop truly forever.
 
 ## On finishing
 Summarize: rounds run, baseline → best, total improvement, and where the winning asset lives
-(git branch HEAD or `best/`). Offer to write a short report of the rounds.
+(dedicated worktree branch HEAD or `best/`). Offer to write a short report and ask before removing
+the worktree.

@@ -12,6 +12,6 @@ Update the project's working memory now:
    - `## Next action` — the single next concrete step
    - `## Blockers / decisions` — anything that would be lost otherwise
 2. Append ONE timestamped line to `.memory/JOURNAL.md` describing what was just accomplished. Never edit prior journal lines.
-3. If the repo is git-tracked, stage and commit `.memory/` with message `chore: checkpoint`.
+3. Report the memory files changed. Do not stage or commit them unless the user explicitly asks.
 
 Keep STATE.md concise — it is re-injected into context on every session start under a character cap.

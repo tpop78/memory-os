@@ -16,7 +16,8 @@ Stand up durable working memory for this project, then start the loop:
 4. Append ONE timestamped line to `.memory/JOURNAL.md` noting the loop was initialised.
 5. Tell the user how to track `.memory/` in git: **commit** it for shareable team memory, or
    gitignore it for local-only. Default recommendation: commit `PLAN.md` + `STATE.md`; commit
-   `JOURNAL.md` too unless its per-compaction churn is unwanted.
+   `JOURNAL.md` too unless its per-compaction churn is unwanted. Never stage or commit without
+   explicit approval.
 
 From here the loop runs on its own: the `SessionStart` hook re-injects a bounded snapshot of
 STATE + recent journal, the `PreCompact` hook preserves it across compaction, and `/checkpoint`
@@ -24,3 +25,7 @@ STATE + recent journal, the `PreCompact` hook preserves it across compaction, an
 
 Boundary: `.memory/` holds the **live working state of the current effort**. Durable
 cross-session facts and preferences belong in your agent's own long-term memory, not here.
+
+One active task is supported per checkout. If the existing task is complete, use the
+`memory-task-lifecycle` skill to archive it before creating a new PLAN. Use separate git worktrees
+for concurrent tasks.

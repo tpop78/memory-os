@@ -25,9 +25,12 @@
 - wallclock_cap: 8h
 
 ## Mode
-- <git | snapshot>           <!-- set by /auto-research at setup -->
+- <git-worktree | snapshot>  <!-- set by /auto-research at setup -->
+- worktree: <absolute path or n/a>
+- branch: <autoresearch/tag or n/a>
 
 ## Rules (locked)
 - Change ONLY the asset path(s) above. One change per round.
 - Never edit INSTRUCTIONS.md or SCORING.sh. Never change the definition of "better".
 - Keep a winner; revert a loser to the last known-good. Log every round to RESULTS.tsv.
+- Never use repository-wide reset or clean. Snapshot, stage, and restore only declared asset paths.

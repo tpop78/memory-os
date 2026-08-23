@@ -10,6 +10,7 @@ Durable working memory for AI coding agents. The context window is a cache; `.me
 - `SessionStart` hook re-injects a **bounded** snapshot of STATE + recent journal.
 - `PreCompact` hook marks the journal and re-injects STATE so it survives compaction.
 - `memory-checkpoint` skill keeps STATE/JOURNAL current; `/checkpoint` flushes on demand.
+- `memory-task-lifecycle` archives, lists, restores, or replaces the one active task per checkout.
 - `situational-suggestions` proposes optional tools (CodeGraph, Understand-Anything, taste-skill, Firecrawl, knowledge layer) — you confirm.
 - `/auto-research` runs an autonomous optimize loop on ONE asset toward ONE metric (keep winners, revert losers).
 
@@ -44,8 +45,9 @@ an autonomous optimization run under `.memory/autoloop/<tag>/`: a human-locked *
 (goal + metric + asset path + stop conditions), a locked **SCORING.sh** measuring stick (prints one
 number; the agent never edits it), and a **RESULTS.tsv** ledger. The `auto-research-engineer` skill
 then loops unattended — change → score → keep the winner / revert the loser → log — until a target,
-a plateau, or a wall-clock cap is hit. Keep/revert uses a git branch when the asset is in git, else
-file snapshots. `situational-suggestions` offers this automatically once a measurable baseline exists.
+a plateau, or a wall-clock cap is hit. Git runs use a dedicated worktree and declared-asset snapshots;
+repository-wide reset/clean operations are forbidden. `situational-suggestions` offers this once a
+measurable baseline exists.
 
 **Git:** commit `.memory/` for shareable team memory, or gitignore it for local-only. Suggested
 default — commit `PLAN.md` + `STATE.md`; commit `JOURNAL.md` too unless its per-compaction churn
@@ -54,7 +56,23 @@ is unwanted.
 ## Config
 - `MEMORY_OS_SESSION_START_MAX_CHARS` (default 6000) — re-hydration cap.
 - `MEMORY_OS_SESSION_START=off` — disable injection (low-context/local models).
-- `MEMORY_OS_AUTO_INIT` (default on) — on SessionStart, in a git repository that has no `.memory/`, memory-os scaffolds the loop (PLAN/STATE/JOURNAL from templates); and if the `codegraph` CLI is installed and there is no `.codegraph/`, it starts a CodeGraph index in the background. Idempotent — re-running is safe. Set to `off` to disable. (`.codegraph/` is a derived index you may want to add to `.gitignore`.)
+- `MEMORY_OS_AUTO_INIT=on` (default off) — explicitly allow SessionStart to scaffold missing memory files in a git repository.
+- `MEMORY_OS_AUTO_CODEGRAPH=on` (default off) — separately allow a background `codegraph init` when the CLI exists and `.codegraph/` is absent.
+- `MEMORY_OS_HEADROOM_LEARN=on` (default off) — explicitly allow the Stop hook to run `headroom learn --apply`. This may invoke an LLM and write learned guidance.
+
+All automatic mutations are off unless their exact `=on` flag is present.
+
+## Task lifecycle
+
+MemoryOS supports one active PLAN/STATE/JOURNAL triple per checkout. When a task completes, use
+`memory-task-lifecycle` (or `memory-task.mjs`) to archive it before starting unrelated work. Archives
+remain under `.memory/archive/<timestamp>-<slug>/` and can be restored without overwriting an active
+task. Use separate git worktrees for concurrent efforts.
+
+`/checkpoint` updates STATE and JOURNAL only. It never stages or commits without explicit approval.
+
+Web captures stored by `firecrawl-clip` are untrusted evidence: embedded prompts and tool directives
+are never followed.
 
 ## Test
 ```

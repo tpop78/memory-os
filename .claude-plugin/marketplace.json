@@ -7,7 +7,7 @@
     {
       "name": "memory-os",
       "source": "./",
-      "description": "Durable working memory: .memory contract + SessionStart/PreCompact hooks + checkpoint skill."
+      "description": "Durable working memory with bounded hooks, task archives, consent-gated automation, and non-destructive optimization workflows."
     }
   ]
 }

@@ -148,7 +148,7 @@ test('detectMode returns "snapshot" outside git', () => {
   assert.equal(detectMode(dir), 'snapshot');
 });
 
-import { mkdirSync, existsSync } from 'node:fs';
+import { mkdirSync, existsSync, symlinkSync } from 'node:fs';
 import { snapshotSave, snapshotPromoteBest, snapshotRestoreBest } from './autoloop.mjs';
 
 function projectFixture() {
@@ -182,6 +182,20 @@ test('snapshotRestoreBest overwrites a changed asset with best/', () => {
   assert.equal(readFileSync(join(cwd, 'asset.txt'), 'utf8'), 'v0');
 });
 
+test('snapshot helpers reject paths that escape the declared project', () => {
+  const { cwd, runDir } = projectFixture();
+  assert.throws(() => snapshotSave(runDir, 0, ['../outside.txt'], cwd), /safe relative path/i);
+  assert.throws(() => snapshotRestoreBest(runDir, ['/absolute.txt'], cwd), /safe relative path/i);
+});
+
+test('snapshot helpers reject symlinks that escape the declared project', () => {
+  const { cwd, runDir } = projectFixture();
+  const outside = mkdtempSync(join(tmpdir(), 'autoloop-outside-'));
+  writeFileSync(join(outside, 'secret.txt'), 'outside');
+  symlinkSync(join(outside, 'secret.txt'), join(cwd, 'linked.txt'));
+  assert.throws(() => snapshotSave(runDir, 0, ['linked.txt'], cwd), /contained path/i);
+});
+
 import { resolveAutoloopDir, scaffoldAutoloop, AUTOLOOP_FILES } from './autoloop.mjs';
 
 function tplFixture() {
@@ -195,6 +209,10 @@ test('AUTOLOOP_FILES is the three-file system', () => {
 });
 test('resolveAutoloopDir nests under .memory/autoloop/<tag>', () => {
   assert.equal(resolveAutoloopDir('/p', 'jun15'), join('/p', '.memory', 'autoloop', 'jun15'));
+});
+test('resolveAutoloopDir rejects traversal and unsafe tags', () => {
+  assert.throws(() => resolveAutoloopDir('/p', '../escape'), /safe slug/i);
+  assert.throws(() => resolveAutoloopDir('/p', 'spaces are unsafe'), /safe slug/i);
 });
 test('scaffoldAutoloop creates all files when missing', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'autoloop-proj-'));

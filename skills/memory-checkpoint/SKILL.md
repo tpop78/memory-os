@@ -39,6 +39,12 @@ Write back at every meaningful boundary — do not wait until the end:
 
 **`.memory/PLAN.md`** — immutable once approved. Carries the Definition of Done at the top. Do not rewrite it as work progresses; reflect progress in STATE.md instead.
 
+There is one active task per checkout. When its Definition of Done is met, offer to archive it with
+the `memory-task-lifecycle` skill before starting unrelated work. A plan is immutable for its task,
+not permanently for the repository. Concurrent tasks should use separate git worktrees.
+
+Never stage or commit `.memory/` unless the user explicitly asks.
+
 ## Session depth
 
 STATE.md carries a `## Session depth` section:

@@ -34,7 +34,7 @@ test('planExists reflects PLAN.md presence', () => {
   assert.equal(planExists(mem), true);
 });
 
-import { tailJournal, appendJournal } from './memory.mjs';
+import { tailJournal, appendJournal, appendCompactionMarker } from './memory.mjs';
 
 test('tailJournal returns empty string when JOURNAL.md absent', () => {
   const { mem } = fixture();
@@ -53,6 +53,28 @@ test('appendJournal adds a line and creates the file if needed', () => {
   appendJournal(mem, 'second');
   const body = readFileSync(join(mem, 'JOURNAL.md'), 'utf8');
   assert.match(body, /first\nsecond\n$/);
+});
+
+test('appendCompactionMarker suppresses consecutive markers inside the dedupe window', () => {
+  const { mem } = fixture();
+  writeFileSync(join(mem, 'JOURNAL.md'), '# Journal\n');
+
+  assert.equal(appendCompactionMarker(mem, new Date('2026-08-23T01:00:00.000Z')), true);
+  assert.equal(appendCompactionMarker(mem, new Date('2026-08-23T01:01:00.000Z')), false);
+
+  const body = readFileSync(join(mem, 'JOURNAL.md'), 'utf8');
+  assert.equal((body.match(/↻ compaction/g) || []).length, 1);
+});
+
+test('appendCompactionMarker records a new marker after meaningful journal activity', () => {
+  const { mem } = fixture();
+  writeFileSync(join(mem, 'JOURNAL.md'), '# Journal\n');
+  appendCompactionMarker(mem, new Date('2026-08-23T01:00:00.000Z'));
+  appendJournal(mem, '2026-08-23T01:01:00.000Z — completed a phase');
+
+  assert.equal(appendCompactionMarker(mem, new Date('2026-08-23T01:02:00.000Z')), true);
+  const body = readFileSync(join(mem, 'JOURNAL.md'), 'utf8');
+  assert.equal((body.match(/↻ compaction/g) || []).length, 2);
 });
 
 import { scaffoldMemory, MEMORY_FILES } from './memory.mjs';
@@ -120,6 +142,32 @@ test('composeContext stays within maxChars and marks truncation', () => {
   const out = composeContext({ state: big, journalTail: '', planExists: false, maxChars: 6000 });
   assert.ok(out.length <= 6000, `length ${out.length} <= 6000`);
   assert.match(out, /\[truncated\]/);
+});
+
+test('composeContext honors caps shorter than the truncation marker', () => {
+  const out = composeContext({ state: 'x'.repeat(100), journalTail: '', planExists: false, maxChars: 5 });
+  assert.ok(out.length <= 5, `length ${out.length} <= 5`);
+});
+
+test('composeContext preserves next action and inventory before verbose done history', () => {
+  const state = [
+    '# State',
+    '## Now',
+    'Phase 4/5',
+    '## Done (99/100)',
+    'x'.repeat(3000),
+    '## Remaining',
+    '- final verification',
+    '## Next action',
+    'Run the release verification suite.',
+    '## Blockers / decisions',
+    '- no push',
+  ].join('\n');
+  const out = composeContext({ state, journalTail: 'old journal entry', planExists: true, maxChars: 700 });
+  assert.ok(out.length <= 700);
+  assert.match(out, /Run the release verification suite/);
+  assert.match(out, /Already in context this session/);
+  assert.doesNotMatch(out, /old journal entry/);
 });
 
 test('composeContext inventory includes PLAN line when planExists is true', () => {

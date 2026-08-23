@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import {
-  resolveMemoryDir, readState, tailJournal, planExists,
-  appendJournal, getMaxChars, composeContext,
+  resolveMemoryDir, isMemoryDirSafe, readState, tailJournal, planExists,
+  appendCompactionMarker, getMaxChars, composeContext,
 } from './lib/memory.mjs';
 
 function readStdin() {
@@ -25,13 +25,12 @@ try { input = JSON.parse(raw || '{}'); } catch { input = {}; }
 const cwd = input.cwd || process.cwd();
 const mem = resolveMemoryDir(cwd);
 
-if (!existsSync(mem)) {
+if (!existsSync(mem) || !isMemoryDirSafe(cwd)) {
   emit('');
   process.exit(0);
 }
 
-const ts = new Date().toISOString().slice(0, 16).replace('T', ' ');
-appendJournal(mem, `${ts} ↻ compaction — re-hydrated from STATE.md`);
+appendCompactionMarker(mem);
 
 const context = composeContext({
   state: readState(mem),

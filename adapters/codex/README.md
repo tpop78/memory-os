@@ -1,12 +1,17 @@
 # Codex adapter
 
-The `.memory/` contract is harness-agnostic — the same files work in Codex. Only the hook wiring differs.
+The `.memory/` contract is harness-agnostic. Current Codex releases support plugin-bundled hooks and
+discover `hooks/hooks.json` from an enabled plugin. MemoryOS also ships a native
+`.codex-plugin/plugin.json` manifest.
 
-1. Ensure `node` is on PATH.
-2. In your Codex config, register equivalent session-start and pre-compact handlers that run:
-   - start: `node <MEMORY_OS_DIR>/hooks/scripts/rehydrate.mjs`
-   - pre-compact: `node <MEMORY_OS_DIR>/hooks/scripts/flush.mjs`
-   The scripts read the project `cwd` from their stdin JSON and fall back to `process.cwd()`, so they work wherever Codex invokes them.
-3. The scripts print plain context that Codex adds at session start; if Codex does not parse the `hookSpecificOutput` JSON shape, consume the `additionalContext` field from stdout.
+1. Ensure `node` is on PATH and enable the plugin.
+2. Review and trust the exact MemoryOS hook definitions in Codex. Changed hooks are skipped until
+   their new hash is trusted.
+3. Codex runs hook commands with the session working directory and supplies `PLUGIN_ROOT`; it also
+   supplies `CLAUDE_PLUGIN_ROOT` for compatibility with this package.
+4. SessionStart and PreCompact remain read-only unless you explicitly enable a mutation flag.
 
-> Note: confirm Codex's current hook/automation surface against its docs before wiring — adjust the handler registration accordingly. The scripts themselves are unchanged.
+See the official OpenAI documentation for [Codex hooks](https://developers.openai.com/codex/hooks)
+and [plugin packaging](https://developers.openai.com/codex/plugins/build). For a plain checkout rather
+than an installed plugin, register equivalent SessionStart and PreCompact commands in a trusted Codex
+hook configuration.

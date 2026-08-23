@@ -1,8 +1,8 @@
 import {
-  resolveMemoryDir, readState, tailJournal, planExists,
+  resolveMemoryDir, isMemoryDirSafe, readState, tailJournal, planExists,
   getMaxChars, isEnabled, composeContext,
 } from './lib/memory.mjs';
-import { isAutoInitEnabled, runAutoInit } from './lib/autoinit.mjs';
+import { runAutoInit } from './lib/autoinit.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -25,26 +25,36 @@ const raw = await readStdin();
 let input = {};
 try { input = JSON.parse(raw || '{}'); } catch { input = {}; }
 const cwd = input.cwd || process.cwd();
+const mem = resolveMemoryDir(cwd);
+
+if (!isMemoryDirSafe(cwd)) {
+  emit('');
+  process.exit(0);
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const templatesDir = join(here, '..', '..', 'templates', '.memory');
 
 let autoInitNote = '';
-if (isAutoInitEnabled(process.env)) {
-  try { autoInitNote = runAutoInit(cwd, templatesDir); } catch { autoInitNote = ''; }
-}
+try { autoInitNote = runAutoInit(cwd, templatesDir); } catch { autoInitNote = ''; }
 
 if (!isEnabled(process.env)) {
-  emit(autoInitNote);
+  emit(composeContext({
+    notice: autoInitNote,
+    state: null,
+    journalTail: '',
+    planExists: false,
+    maxChars: getMaxChars(process.env),
+  }));
   process.exit(0);
 }
 
-const mem = resolveMemoryDir(cwd);
 const context = composeContext({
+  notice: autoInitNote,
   state: readState(mem),
   journalTail: tailJournal(mem, 15),
   planExists: planExists(mem),
   maxChars: getMaxChars(process.env),
 });
-emit(autoInitNote ? `${autoInitNote}\n\n${context}` : context);
+emit(context);
 process.exit(0);

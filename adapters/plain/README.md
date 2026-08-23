@@ -7,4 +7,12 @@ For setups without the plugin marketplace:
 3. Copy `templates/.memory/` into your project root as `.memory/`.
 4. Optionally copy the `skills/` and `commands/` you want into `.claude/`.
 
-Config: set `MEMORY_OS_SESSION_START_MAX_CHARS` (default 6000) or `MEMORY_OS_SESSION_START=off` in your environment.
+Config:
+
+- `MEMORY_OS_SESSION_START_MAX_CHARS` defaults to 6000.
+- `MEMORY_OS_SESSION_START=off` disables injection.
+- `MEMORY_OS_AUTO_INIT=on` opts into automatic `.memory/` scaffolding.
+- `MEMORY_OS_AUTO_CODEGRAPH=on` separately opts into background CodeGraph initialization.
+- `MEMORY_OS_HEADROOM_LEARN=on` opts into Stop-time Headroom learning, which may invoke an LLM and write guidance.
+
+All automatic mutation flags are off by default.

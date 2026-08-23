@@ -1,0 +1,12 @@
+{
+  "name": "memory-os",
+  "version": "0.5.1",
+  "description": "Consent-preserving durable working memory with bounded lifecycle hooks and recoverable task archives.",
+  "author": {
+    "name": "tpop78"
+  },
+  "repository": "https://github.com/tpop78/memory-os",
+  "license": "MIT",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

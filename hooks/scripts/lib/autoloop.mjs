@@ -5,6 +5,8 @@ import { appendFileSync, readFileSync, mkdirSync, copyFileSync, existsSync } fro
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { assertContainedRelativePaths, assertSafeRelativePaths, assertSafeSlug } from './safety.mjs';
+import { isMemoryDirSafe } from './memory.mjs';
 
 /** Read the score a SCORING run printed: the last numeric token on the last line that has one. */
 export function extractScore(stdout) {
@@ -123,6 +125,7 @@ const pad = (n) => String(n).padStart(3, '0');
 
 /** Copy each relPath (relative to cwd) into runDir/rounds/NNN/relPath. Returns the round dir. */
 export function snapshotSave(runDir, round, relPaths, cwd) {
+  assertContainedRelativePaths(cwd, relPaths);
   const dest = join(runDir, 'rounds', pad(round));
   for (const rel of relPaths) {
     const to = join(dest, rel);
@@ -134,6 +137,7 @@ export function snapshotSave(runDir, round, relPaths, cwd) {
 
 /** Copy a saved round's files into runDir/best/. Returns the best dir. */
 export function snapshotPromoteBest(runDir, round, relPaths) {
+  assertSafeRelativePaths(relPaths);
   const src = join(runDir, 'rounds', pad(round));
   const best = join(runDir, 'best');
   for (const rel of relPaths) {
@@ -146,6 +150,7 @@ export function snapshotPromoteBest(runDir, round, relPaths) {
 
 /** Restore best/ back over the live asset paths (revert a losing experiment). */
 export function snapshotRestoreBest(runDir, relPaths, cwd) {
+  assertContainedRelativePaths(cwd, relPaths);
   const best = join(runDir, 'best');
   for (const rel of relPaths) {
     const to = join(cwd, rel);
@@ -157,11 +162,13 @@ export function snapshotRestoreBest(runDir, relPaths, cwd) {
 export const AUTOLOOP_FILES = ['INSTRUCTIONS.md', 'SCORING.sh', 'RESULTS.tsv'];
 
 export function resolveAutoloopDir(cwd, tag) {
+  assertSafeSlug(tag, 'auto-research tag');
   return join(cwd, '.memory', 'autoloop', tag);
 }
 
 /** Seed .memory/autoloop/<tag>/ from templates. Idempotent — never overwrites. */
 export function scaffoldAutoloop(cwd, tag, templatesDir) {
+  if (!isMemoryDirSafe(cwd)) throw new Error('Refusing to scaffold through an unsafe .memory path');
   const dir = resolveAutoloopDir(cwd, tag);
   mkdirSync(dir, { recursive: true });
   const created = [];

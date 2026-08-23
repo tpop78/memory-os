@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,19 +43,38 @@ test('rehydrate handles a project with no .memory dir', () => {
   assert.equal(json.hookSpecificOutput.additionalContext, '');
 });
 
-test('auto-inits .memory in a fresh git repo when enabled (default)', () => {
+test('rehydrate refuses to read through a project-controlled .memory symlink', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'memos-rh-link-'));
+  const outside = mkdtempSync(join(tmpdir(), 'memos-rh-outside-'));
+  writeFileSync(join(outside, 'STATE.md'), 'SECRET OUTSIDE STATE');
+  symlinkSync(outside, join(cwd, '.memory'));
+  const json = JSON.parse(run(cwd));
+  assert.equal(json.hookSpecificOutput.additionalContext, '');
+});
+
+test('does not auto-init .memory in a fresh git repo by default', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'memos-ai-'));
   execFileSync('git', ['init'], { cwd, stdio: 'ignore' });
-  // Pre-create .codegraph so the real `codegraph init` is never spawned (hermetic test).
-  mkdirSync(join(cwd, '.codegraph'), { recursive: true });
   const json = JSON.parse(run(cwd));
+  assert.equal(json.hookSpecificOutput.additionalContext, '');
+  assert.ok(!existsSync(join(cwd, '.memory')));
+});
+
+test('auto-inits .memory only when MEMORY_OS_AUTO_INIT=on', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'memos-aion-'));
+  execFileSync('git', ['init'], { cwd, stdio: 'ignore' });
+  mkdirSync(join(cwd, '.codegraph'), { recursive: true });
+  const json = JSON.parse(run(cwd, { MEMORY_OS_AUTO_INIT: 'on' }));
   assert.match(json.hookSpecificOutput.additionalContext, /scaffolded \.memory loop/);
   assert.ok(existsSync(join(cwd, '.memory', 'STATE.md')));
 });
 
-test('does NOT auto-init when MEMORY_OS_AUTO_INIT=off', () => {
-  const cwd = mkdtempSync(join(tmpdir(), 'memos-aioff-'));
+test('auto-init notice and rehydrated context together stay within the configured cap', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'memos-aicap-'));
   execFileSync('git', ['init'], { cwd, stdio: 'ignore' });
-  run(cwd, { MEMORY_OS_AUTO_INIT: 'off' });
-  assert.ok(!existsSync(join(cwd, '.memory')));
+  const json = JSON.parse(run(cwd, {
+    MEMORY_OS_AUTO_INIT: 'on',
+    MEMORY_OS_SESSION_START_MAX_CHARS: '40',
+  }));
+  assert.ok(json.hookSpecificOutput.additionalContext.length <= 40);
 });

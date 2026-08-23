@@ -1,5 +1,5 @@
 {
-  "description": "memory-os: re-hydrate working memory on session start; mark + re-inject on compaction.",
+  "description": "memory-os: bounded re-hydration and compaction continuity; automatic writes and Headroom learning are opt-in.",
   "hooks": {
     "SessionStart": [
       {
